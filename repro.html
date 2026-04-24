@@ -1,0 +1,97 @@
+<!doctype html>
+<!--
+  One-file manual reproduction. Serve this directory with any static
+  HTTP server and open repro.html?depth=5000 in a browser. A
+  <script src="fixtures/ternary-template-<depth>.js"> is injected and
+  the page reports pass/fail of the browser's parser.
+
+  Generate fixtures first:
+    node scripts/build-fixture.js 5000 template
+
+  Or several at once:
+    for d in 1000 3000 5000 10000; do node scripts/build-fixture.js $d template; done
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>deep-ternary parse repro</title>
+    <style>
+      body { font: 14px/1.5 -apple-system, system-ui, sans-serif; padding: 24px; }
+      .ok { color: #076f00; }
+      .fail { color: #a40000; }
+      pre { background: #f4f4f4; padding: 12px; white-space: pre-wrap; }
+    </style>
+    <script>
+      // Register the error listener before any <script src> loads so
+      // we catch parse-time failures, which don't produce a thrown
+      // exception — they fire as a `window.error` event instead.
+      window.__errors__ = [];
+      window.addEventListener(
+        "error",
+        function (e) {
+          window.__errors__.push({
+            message:
+              (e.error && e.error.message) ||
+              e.message ||
+              "(no message)",
+            filename: e.filename || "-",
+            line: e.lineno || 0,
+            col: e.colno || 0,
+          });
+        },
+        true,
+      );
+
+      function render() {
+        var depth = new URL(location.href).searchParams.get("depth") || 5000;
+        var variant =
+          new URL(location.href).searchParams.get("variant") || "template";
+        document.getElementById("depth").textContent = depth;
+        document.getElementById("variant").textContent = variant;
+        document.getElementById("script-src").textContent =
+          "fixtures/ternary-" + variant + "-" + depth + ".js";
+
+        var script = document.createElement("script");
+        script.src = "fixtures/ternary-" + variant + "-" + depth + ".js";
+        script.onload = report;
+        script.onerror = report;
+        document.body.appendChild(script);
+      }
+
+      function report() {
+        setTimeout(function () {
+          var out = document.getElementById("result");
+          if (window.__parsed__) {
+            out.innerHTML =
+              '<span class="ok">✅ parsed and executed — window.result = <code>' +
+              String(window.result) +
+              "</code></span>";
+          } else {
+            var first = window.__errors__[0] || {};
+            out.innerHTML =
+              '<span class="fail">❌ parse / load failure</span>\n' +
+              "<pre>" +
+              JSON.stringify(window.__errors__, null, 2) +
+              "</pre>";
+          }
+        }, 100);
+      }
+    </script>
+  </head>
+  <body onload="render()">
+    <h1>deep-ternary parse repro</h1>
+    <p>
+      Loading a ternary chain fixture of depth
+      <b id="depth">?</b> (<span id="variant">?</span> branches) from
+      <code id="script-src">?</code>
+    </p>
+    <p>
+      Query-string parameters:
+      <code>?depth=&lt;N&gt;</code>,
+      <code>?variant=template|string|number</code> (default:
+      <code>depth=5000</code>, <code>variant=template</code>).
+    </p>
+    <hr />
+    <div id="result">loading…</div>
+  </body>
+</html>

@@ -1,21 +1,30 @@
 // Generates a JavaScript fixture that defines a single variable whose
-// value is a right-leaning ternary chain of configurable depth. Each
-// branch is a template literal. The generator writes to fixtures/ so
-// the test can serve the file to the browser.
+// value is a right-leaning ternary chain of configurable depth. The
+// generator writes to fixtures/ so the test can serve the file to the
+// browser.
 //
 // Usage: node scripts/build-fixture.js <depth> [variant]
 //   variant = "template" (default) | "string" | "number"
 //
-// variant controls whether the ternary branches are:
-//   - "template":  `k0`, `v0`  — the shape that triggers the bug
-//   - "string":    "k0", "v0"  — SpiderMonkey handles this fine
-//   - "number":    0, 1        — also fine; included for comparison
+// variant controls the literal shape of each branch; all three shapes
+// reach the Firefox parser threshold at the same depth. The variants
+// exist so the test suite can demonstrate the threshold is about
+// expression nesting, not about template literals specifically:
+//   - "template":  `k0`, `v0`
+//   - "string":    "k0", "v0"
+//   - "number":    0, 1_000_000
 //
-// The output is a .js file whose only statement is:
-//   window.result = (e === BRANCH0 ? VAL0 : e === BRANCH1 ? VAL1 : ... : undefined);
+// The output is a .js file whose effective statement is:
+//   window.result = (function (e) {
+//     return e === BRANCH0 ? VAL0
+//          : e === BRANCH1 ? VAL1
+//          : …
+//          : undefined;
+//   })(LAST_BRANCH);
 //
 // Firefox's parser decides whether to choke at script-compile time
-// based solely on this expression's shape and depth.
+// based solely on this expression's shape and depth; the function is
+// never invoked when the parser bails out.
 
 "use strict";
 
