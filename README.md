@@ -205,11 +205,6 @@ What would be useful from you:
    chains.** V8's equivalent handles 100 000+ without trouble; this
    grammar is inherently right-associative but the traversal doesn't
    need to use the native stack for it.
-
-We're happy to provide the original minified artefact (the real
-`runtime.js` that triggers this on the app we hit) on request — we
-can't commit it publicly without a build.
-
 ---
 
 ## License
