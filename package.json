@@ -1,0 +1,16 @@
+{
+  "name": "firefox-ternary-parse-recursion",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Minimal reproduction: Firefox's SpiderMonkey parser throws InternalError: too much recursion while parsing a right-leaning ternary chain whose branches are template literals, at a depth Chromium's V8 handles trivially.",
+  "license": "MIT",
+  "scripts": {
+    "build-fixture": "node scripts/build-fixture.js",
+    "test": "playwright test",
+    "test:debug": "playwright test --headed",
+    "install-browsers": "playwright install chromium firefox"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}
