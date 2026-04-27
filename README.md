@@ -2,7 +2,7 @@
 
 A minimal, reproducible demonstration that **Firefox's SpiderMonkey JS
 parser refuses to parse a right-leaning `?:` chain once it exceeds a
-depth of roughly 4000–5000 levels**, throwing
+depth of roughly 4000-5000 levels**, throwing
 `InternalError: too much recursion` **at script compile time** before
 any JavaScript in the file has run.
 
@@ -10,7 +10,10 @@ The same source parses cleanly in Chromium's V8 at depths up to at
 least 100 000.
 
 This is a parser limit, not a runtime limit. The generated ternary is
-never invoked — Firefox throws while compiling the `<script>` body.
+never invoked; Firefox throws while compiling the `<script>` body.
+
+Tracking issue:
+[bugzilla.mozilla.org/show_bug.cgi?id=2034840](https://bugzilla.mozilla.org/show_bug.cgi?id=2034840).
 
 ---
 
@@ -29,7 +32,7 @@ console is just:
 Uncaught InternalError: too much recursion
 ```
 
-with no filename, no line number, no stack — the classic signature of
+with no filename, no line number, no stack: the classic signature of
 a script-compile-time parser failure.
 
 We confirmed with the real bundle that Firefox's parser was the choke
@@ -51,7 +54,7 @@ with no reference to any specific application or minifier.
 ├── tests/parse-recursion.spec.js # Playwright test: assert parse pass/fail per depth
 ├── repro.html                    # standalone browser repro (no Playwright)
 ├── playwright.config.js
-└── fixtures/                     # generated (gitignored) — produced by build-fixture.js
+└── fixtures/                     # generated (gitignored), produced by build-fixture.js
 ```
 
 `build-fixture.js` generates a single JavaScript file whose only code is:
@@ -69,7 +72,7 @@ window.result = (function (e) {
 window.__parsed__ = true;
 ```
 
-`<k*>`/`<v*>` are one of three shapes — **template literals** like
+`<k*>`/`<v*>` are one of three shapes: **template literals** like
 `` `k0` `` / `` `v0` ``, **double-quoted strings** like `"k0"` / `"v0"`,
 or **plain numbers** like `0` / `1000000`. The test runs all three
 variants to show the parse failure is purely about depth; the kind of
@@ -96,7 +99,7 @@ Playwright will:
 
 Expected output: **42 passed** (7 depths × 3 variants × 2 browsers).
 If the suite ever reports something other than all-pass on a new
-browser version, the threshold has shifted — inspect the logged
+browser version, the threshold has shifted; inspect the logged
 message and adjust `PASS_DEPTHS` / `FAIL_DEPTHS` in
 `tests/parse-recursion.spec.js`.
 
@@ -109,22 +112,22 @@ node scripts/build-fixture.js 5000 template   # generates fixtures/ternary-templ
 python3 -m http.server 8000                   # or any static server
 ```
 
-Open `http://localhost:8000/repro.html?depth=5000` in Firefox — the
+Open `http://localhost:8000/repro.html?depth=5000` in Firefox; the
 page shows `❌ parse / load failure` with an error object whose
-`message` is `too much recursion`. Open the same URL in Chromium —
-the page shows `✅ parsed and executed — window.result = "v4999"`.
+`message` is `too much recursion`. Open the same URL in Chromium and
+the page shows `✅ parsed and executed, window.result = "v4999"`.
 
 Change depth via `?depth=<N>`; try `?variant=string` or
 `?variant=number` to confirm the threshold is the same for any branch
 literal type. Fixtures must exist for the selected depth/variant
-combination — pre-generate them with:
+combination, pre-generate them with:
 
 ```bash
 for d in 1000 3000 5000 10000; do node scripts/build-fixture.js $d template; done
 ```
 
 (Opening the fixture `.js` file directly in a browser doesn't trigger
-the error — the browser just displays the source as text. The parse
+the error: the browser just displays the source as text. The parse
 error fires only when the file is loaded via a `<script src=…>` tag,
 which is what `repro.html` and the Playwright suite do.)
 
@@ -172,7 +175,7 @@ whenever it sees a `? A : B` where `B` is itself a
 to the parser. At roughly 4500 frames the parser runs out of its
 compile-time stack and throws `InternalError: too much recursion`
 without reporting a source location (because there is no source
-location yet — it hasn't produced a bytecode offset).
+location yet, it hasn't produced a bytecode offset).
 
 V8 appears to handle the same grammatical structure with an iterative
 or much more shallowly-recursive parse, so the same source text
@@ -196,7 +199,7 @@ ternary that collapses to 4000+ levels and pushes us over Firefox's
 threshold.
 
 Because the parser error happens before any code runs, React's error
-boundaries never catch it — the browser just surfaces the raw error
+boundaries never catch it; the browser just surfaces the raw error
 and the app fails to bootstrap.
 
 ---
@@ -212,7 +215,7 @@ What would be useful from you:
    below it.
 2. **Better error signal.** "Uncaught InternalError: too much
    recursion" with no filename or position, while technically correct,
-   is extremely hard to diagnose — especially when the expression is
+   is extremely hard to diagnose, especially when the expression is
    thousands of lines inside a multi-megabyte minified bundle. A
    filename and a position (even if approximate) would make this
    discoverable through normal debugging channels.
